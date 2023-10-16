@@ -1,0 +1,144 @@
+context pressone_vacation-stops {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+        begin:
+                NoOp(you are in vacation-stops);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                Background(/home/pressone/www/voicefiles/pressone~cscs_stopmenu);
+                
+                WaitExten();
+        pg2:
+                if (${Stoptype}=="V") {
+                        if (${StopLength}<11) {
+                                Playback(/home/pressone/www/voicefiles/pressone~59_hold_paper_on);
+                                &SayMonthDate(${StopDate});
+                                // SayDigits(${StopDate});
+                                Playback(/home/pressone/www/voicefiles/pressone~60_deliver_copies_on);
+                                &SayMonthDate(${RestartDate});
+                                // SayDigits(${RestartDate});
+                                goto pressone_11-if-this-is-correct,s,begin;
+                        } else {
+                                goto pressone_agent-xfer,s,begin;                                
+                        }
+                } else {
+                        if (${StopLength}<60) {
+                                Playback(/home/pressone/www/voicefiles/pressone~51_stop_paper_on);
+                                &SayMonthDate(${StopDate});
+                                // SayDigits(${StopDate});
+                                Playback(/home/pressone/www/voicefiles/pressone~52_resume_service_on);
+                                &SayMonthDate(${RestartDate});
+                                // SayDigits(${RestartDate});
+                                goto pressone_11-if-this-is-correct,s,begin;
+                        } else {
+                                goto pressone_agent-xfer,s,begin;
+                        }
+                }
+        pg3:
+                if (${Stoptype}=="V") {
+                        Playback(/home/pressone/www/voicefiles/pressone~53_thank_you_for_donation);
+                }
+                Playback(/home/pressone/www/voicefiles/pressone~60printservicestop);
+                &SayMonthDate(${StopDate});
+                // SayDigits(${StopDate});
+                Playback(/home/pressone/www/voicefiles/pressone~60printserviceresume);
+                &SayMonthDate(${RestartDate});
+                // SayDigits(${RestartDate});
+                if (${Stoptype}=="N") {
+                        goto pressone_54-perform-another-actionNew,s,begin;
+                } else {
+                        goto pressone_54-perform-another-action,s,begin;
+                }
+}
+
+_0 => {  }
+_1 => { 
+        SET(Stoptype="R");
+        Playback(/home/pressone/www/voicefiles/pressone~cscs_nextstopdateis);
+        goto pressone_dtmf,s,begin_cscs_enterstopdate;
+ }
+_2 => { 
+        goto pressone_50-11dayWarning,s,begin;
+ }
+_3 => { 
+        SET(Stoptype="N");
+        Playback(/home/pressone/www/voicefiles/pressone~cscs_nextstopdateis);
+        goto pressone_dtmf,s,begin_cscs_enterstopdate;
+ }
+_4 => { goto pressone_agent-xfer,s,begin; }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => { goto pressone_main-menu,s,begin; } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_vacation-stops,s,begin; } 
+ t => { goto pressone_vacation-stops,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_vacation-stops.ael"
+}
+
+macro SayMonthDate(date) {
+        if (${date:0:1} == 0) {
+                Playback(/home/pressone/www/voicefiles/pressone~month"${date:1:1}");
+        } else {
+                Playback(/home/pressone/www/voicefiles/pressone~month1"${date:1:1}");
+        }
+        Playback(/home/pressone/www/voicefiles/pressone~date"${date:2:2}");
+}
+
+context sub1-vacation-stops {
+s => {
+        begin:
+
+                NoOp(you are in sub1-vacation-stops);
+                TIMEOUT(response)=10;
+                Background(/home/pressone/www/voicefiles/${greeting});
+                WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-vacation-stops,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-vacation-stops {
+s => {
+        begin:
+
+        NoOp(you are in sub2-vacation-stops);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-vacation-stops,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

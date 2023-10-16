@@ -1,0 +1,107 @@
+context pressone_complaints {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+begin:
+                NoOp(you are in complaints);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                // Background(/home/pressone/www/voicefiles/pressone~complaints);
+
+                if (${STATUS}=="Temp Stop") {
+                        goto pressone_TempStopComplaint,s,begin;
+                } else {
+                        // Check late routes table
+                        AGI(agi://127.0.0.1/getstateinfo.fagi,"${STATE_INFO}");
+                        AGI(agi://127.0.0.1/fetchLateRoute.php, "${deliveryentity1}");
+                        NoOp(EPOCH: ${EPOCH});
+                        NoOp(startDateTime: ${startDateTime});
+                        NoOp(endDateTime: ${endDateTime});
+                        
+                        if (${EPOCH} >= ${startDateTime} && ${EPOCH} <= ${endDateTime}) {
+                                goto pressone_late-route,s,begin;
+                        } else {
+                                // if (${EXISTS(${PriorComplaintToday})}) {
+                                //         goto pressone_agent-xfer,s,begin;
+                                // } else {
+                                        goto pressone_15-complaints-main-menu,s,begin;
+                                // }
+                        }
+                }
+                
+                WaitExten();    
+        }
+
+_0 => {  }
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_complaints,s,begin; } 
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_complaints.ael"
+}
+
+ 
+
+context sub1-complaints {
+s => {
+begin:
+
+NoOp(you are in sub1-complaints);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-complaints,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-complaints {
+s => {
+        begin:
+
+        NoOp(you are in sub2-complaints);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-complaints,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

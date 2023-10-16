@@ -1,0 +1,105 @@
+context pressone_ReportDeliveryToday {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+        begin:
+                NoOp(you are in ReportDeliveryToday);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                Background(/home/pressone/www/voicefiles/pressone~ReportDeliveryToday);
+                WaitExten();
+        second:
+                SET(Complaintcode="NoStop");
+                SET(ResolutionCode="R");
+                // Submit to WebSpeed
+                Set(year=${STRFTIME(${EPOCH}, ,%Y)});
+                AGI("agi://127.0.0.1/ivrServerrTran.php", ${STATE_INFO}, ${ACCT_NUMBER}, ${Complaintcode}, ${ResolutionCode}, ${year}${IncidentDate});
+                NoOP(RETURN_STATUS: ${RETURN_STATUS});
+                if (${RETURN_STATUS} == "Completed") {
+                        goto pressone_54-perform-another-action,s,begin;
+                } else {
+                        goto pressone_agent-xfer,s,begin;
+                }
+
+}
+
+_0 => {  }
+_1 => { 
+        Set(IncidentDate=${STRFTIME(${EPOCH}, ,%m%d)});
+        goto s,second;
+ }
+_2 => { 
+        goto pressone_dtmf,s,incidentDate;     // Capture incidentDate
+ }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_ReportDeliveryToday,s,begin; } 
+ t => { goto pressone_ReportDeliveryToday,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_ReportDeliveryToday.ael"
+}
+
+ 
+
+context sub1-ReportDeliveryToday {
+s => {
+begin:
+
+NoOp(you are in sub1-ReportDeliveryToday);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-ReportDeliveryToday,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-ReportDeliveryToday {
+s => {
+        begin:
+
+        NoOp(you are in sub2-ReportDeliveryToday);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-ReportDeliveryToday,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+

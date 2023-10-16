@@ -1,0 +1,106 @@
+context pressone_damaged {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+begin:
+                NoOp(you are in damaged);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                Background(/home/pressone/www/voicefiles/pressone~18_indicate_how_damaged);
+                
+                WaitExten();    
+        }
+
+_0 => {  }
+_1 => { 
+        Set(IncidentDate=${STRFTIME(${EPOCH}, ,%m%d)});
+        SET(Complaintcode="WetPpr");
+        goto pressone_Redelivery,s,begin;
+}
+_2 => { 
+        Set(IncidentDate=${STRFTIME(${EPOCH}, ,%m%d)});
+        SET(Complaintcode="Damaged");
+        goto pressone_Redelivery,s,begin;
+ }
+_3 => { 
+        ifTime (*|sun|*|*) {
+                Set(IncidentDate=${STRFTIME(${EPOCH}, ,%m%d)});
+                ifTime (07:00-11:00|sun|*|*) {
+                        SET(Complaintcode="MissNxTV");
+                } else {
+                        SET(Complaintcode="NoTVBook");
+                }
+        } else {
+                goto pressone_agent-xfer,s,begin;
+        }
+        goto pressone_Redelivery,s,begin;
+ }
+_4 => { goto pressone_main-menu,s,begin; }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => { goto pressone_main-menu,s,begin; } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_damaged,s,begin; } 
+ t => { goto pressone_damaged,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_damaged.ael"
+}
+
+ 
+
+context sub1-damaged {
+s => {
+begin:
+
+NoOp(you are in sub1-damaged);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-damaged,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-damaged {
+s => {
+        begin:
+
+        NoOp(you are in sub2-damaged);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-damaged,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

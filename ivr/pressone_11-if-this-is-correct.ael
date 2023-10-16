@@ -1,0 +1,97 @@
+context pressone_11-if-this-is-correct {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+begin:
+                NoOp(you are in pressone_11-if-this-is-correct);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                Background(/home/pressone/www/voicefiles/pressone~11_if_this_is_correct);
+                WaitExten();
+        }
+
+_0 => {  }
+_1 => { 
+        Playback(/home/pressone/www/voicefiles/pressone~22_hold_while_process);
+        Set(year=${STRFTIME(${EPOCH}, ,%Y)});
+        NoOP("agi://127.0.0.1/ivrStopTran.php", ${STATE_INFO}, ${ACCT_NUMBER}, "V", ${Stoptype}, ${year}${StopDate}, ${year}${RestartDate});
+        AGI("agi://127.0.0.1/ivrStopTran.php", ${STATE_INFO}, ${ACCT_NUMBER}, "V", ${Stoptype}, ${year}${StopDate}, ${year}${RestartDate});
+        NoOP(RETURN_STATUS: ${RETURN_STATUS});
+        NoOP(ERROR_MSG: ${ERROR_MSG});
+        if ("${RETURN_STATUS}" == "Error") {
+                goto pressone_agent-xfer,s,begin;
+        } else {
+                goto pressone_vacation-stops,s,pg3;
+        }
+ }
+_2 => { goto pressone_agent-xfer,s,begin; }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_11-if-this-is-correct,s,begin; } 
+ t => { goto pressone_11-if-this-is-correct,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_11-if-this-is-correct.ael"
+}
+
+ 
+
+context sub1-pressone_11-if-this-is-correct {
+s => {
+begin:
+
+NoOp(you are in sub1-pressone_11-if-this-is-correct);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-pressone_11-if-this-is-correct,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-pressone_11-if-this-is-correct {
+s => {
+        begin:
+
+        NoOp(you are in sub2-pressone_11-if-this-is-correct);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-pressone_11-if-this-is-correct,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

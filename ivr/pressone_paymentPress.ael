@@ -1,0 +1,51 @@
+context pressone_paymentPress {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+        begin:
+                NoOp(you are in paymentPress);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                // Background(/home/pressone/www/voicefiles/pressone~paymentPress);
+                WaitExten();
+        press1:
+                Playback(/home/pressone/www/voicefiles/pressone~paymentPress1);
+                WaitExten();
+        press2:
+                Playback(/home/pressone/www/voicefiles/pressone~paymentPress2);
+                WaitExten();
+        press3:
+                Playback(/home/pressone/www/voicefiles/pressone~paymentPress3);
+                WaitExten();
+        press4:
+                Playback(/home/pressone/www/voicefiles/pressone~paymentPress4);
+                WaitExten();
+        }
+
+_0 => {  }
+_1 => { goto pressone_dtmf,s,enterCCnum; }
+_2 => { goto pressone_dtmf,s,enterCCnum; }
+_3 => { goto pressone_dtmf,s,enterCCnum; }
+_4 => { goto pressone_dtmf,s,enterCCnum; }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_paymentPress,s,begin; } 
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_paymentPress.ael"
+}
+

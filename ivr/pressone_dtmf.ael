@@ -1,0 +1,196 @@
+context pressone_dtmf {
+
+includes{
+        out-pressone-ivr;
+}
+
+s => {          
+        begin:
+                NoOp(you are in dtmf);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=5;
+                Background(/cid/blank);                
+                Read(mynumber,"/home/pressone/www/voicefiles/pressone~09_enter_phone_number");
+                Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                SayDigits(${mynumber});
+                goto pressone_ifthisiscorrectani,s,begin;
+                WaitExten();
+
+        incidentDate:
+                TIMEOUT(digit)=5;
+                Read(IncidentDate,"/home/pressone/www/voicefiles/pressone~EnterIncidentDate");
+                Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                SayDigits(${IncidentDate});
+                goto pressone_ReportDeliveryToday,s,second;
+        
+        begin_cscs_enterstopdate:
+                TIMEOUT(digit)=5;
+                Set(NextStopDate=${STRFTIME($[${EPOCH} + $[3 * 24 * 60* 60]], ,%m%d)});
+                &SayMonthDate(${NextStopDate});
+                Read(StopDate,"/home/pressone/www/voicefiles/pressone~cscs_enterstopdate");
+                Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                &SayMonthDate(${StopDate});
+                // SayDigits(${StopDate});
+                goto begin_restart_date;
+
+        begin_restart_date:
+                TIMEOUT(digit)=5;
+                Read(RestartDate,"/home/pressone/www/voicefiles/pressone~50_restart_date");
+                Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                &SayMonthDate(${RestartDate});
+                // SayDigits(${RestartDate});
+                Set(StopLength=$[((${RestartDate:0:1}-${StopDate:0:1})*10+(${RestartDate:1:1}-${StopDate:1:1}))*30+(${RestartDate:2:1}-${StopDate:2:1})*10+(${RestartDate:-1}-${StopDate:-1})]);
+                // SayDigits(${StopLength});              
+                goto pressone_vacation-stops,s,pg2;
+        
+        enterCCnum:
+                TIMEOUT(digit)=5;
+                for (x=0; ${x} < 2; x=${x} + 1) {
+                        Read(CCNum,"/home/pressone/www/voicefiles/pressone~enterCCnum");
+                        Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                        SayDigits(${CCNum});
+
+                        //Luhn Algorithm Validation
+                        length =  ${LEN(${CCNum})};
+                        sum = 0;
+                        flip = 1;
+                        sumTable1 = "0123456789";
+                        sumTable2 = "0246813579";
+                        for (i=${length} - 1; ${i} >= 0; i=${i} - 1) {
+                                // Map each character against a map of values.
+                                flip=${flip}+1;
+                                if (${flip}%2 == 0) {
+                                        sum = ${sum}+${sumTable1:${CCNum:${i}:1}:1};
+                                } else {
+                                        sum = ${sum}+${sumTable2:${CCNum:${i}:1}:1};
+                                }
+                        }
+                        // Multiply everything by 9.
+                        sum = ${sum}*9;
+                        
+                        // Last digit of the new value is check digit.
+                        if (${sum}%10 == 0 && ${CCNum} != 0) {
+                                goto s,getExpDate;
+                        
+                        } else {
+                                Playback(/home/pressone/www/voicefiles/pressone~invalidCard);
+                        }
+                }
+                goto pressone_agent-xfer,s,begin;
+        
+        getExpDate:
+                TIMEOUT(digit)=5;
+                for (x=0; ${x} < 2; x=${x} + 1) {
+                        Read(EXP_DATE,"/home/pressone/www/voicefiles/pressone~getExpDate");
+                        // Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                        &SayYearMonth(${EXP_DATE});
+                        // SayDigits(${EXP_DATE});
+
+                        //0322: (2022/3) => isValidDate
+                        if (${REGEX("1[0-2]|0[1-9]|\d" ${EXP_DATE:0:2})}) {
+                                if (${REGEX("^[0-9]{2}$" ${EXP_DATE:-2})}) {
+                                        Playback(/home/pressone/www/voicefiles/pressone~expDateEntered);
+                                        goto pressone_ifCorrect,s,begin;
+                                }                                        
+                        } else {
+                                Playback(/home/pressone/www/voicefiles/pressone~notValidDate);
+                        }
+                }
+                goto pressone_agent-xfer,s,begin;
+        
+        billingZip:
+                TIMEOUT(digit)=5;
+                Read(BILLING_ZIP,"/home/pressone/www/voicefiles/pressone~billingZip");
+                Playback(/home/pressone/www/voicefiles/pressone~10-you-entered);
+                SayDigits(${BILLING_ZIP});
+                goto pressone_payments,s,pg2;
+
+
+}
+
+_0 => {  }
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_dtmf,s,begin; } 
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_dtmf.ael"
+}
+
+macro SayMonthDate(date) {
+        if (${date:0:1} == 0) {
+                Playback(/home/pressone/www/voicefiles/pressone~month"${date:1:1}");
+        } else {
+                Playback(/home/pressone/www/voicefiles/pressone~month1"${date:1:1}");
+        }
+        Playback(/home/pressone/www/voicefiles/pressone~date"${date:2:2}");
+}
+
+macro SayYearMonth(date) {
+        if (${date:0:1} == 0) {
+                Playback(/home/pressone/www/voicefiles/pressone~month"${date:1:1}");
+        } else {
+                Playback(/home/pressone/www/voicefiles/pressone~month1"${date:1:1}");
+        }
+        SayNumber(20);
+        SayNumber(${date:2:2});
+}
+
+context sub1-dtmf {
+s => {
+begin:
+
+NoOp(you are in sub1-dtmf);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-dtmf,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-dtmf {
+s => {
+        begin:
+
+        NoOp(you are in sub2-dtmf);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-dtmf,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

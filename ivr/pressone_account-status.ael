@@ -1,0 +1,123 @@
+context pressone_account-status {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+        begin:
+                NoOp(you are in account-status);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                Background(/home/pressone/www/voicefiles/pressone~billingMenu1);
+                WaitExten();
+        pg2:
+                Playback(/home/pressone/www/voicefiles/pressone~lastBill);
+                &SayYearMonthDay(${LAST_BILL_DATE});
+                // Saydigits(${LAST_BILL_DATE});
+                Playback(/home/pressone/www/voicefiles/pressone~subPaidThrough);
+                &SayYearMonthDay(${EXP_DATE});
+                // Saydigits(${EXP_DATE});
+                if (${EXISTS(${LAST_PAY_DATE})}) {
+                        Playback(/home/pressone/www/voicefiles/pressone~lastPayment);
+                        SayNumber(${LAST_PAY_AMT});
+                        Playback(/home/pressone/www/voicefiles/pressone~lastPaidDate);
+                        &SayYearMonthDay(${LAST_PAY_DATE});
+                        // Saydigits(${LAST_PAY_DATE});
+                } else {
+                        Playback(/home/pressone/www/voicefiles/pressone~noLastPayment);
+                }
+                goto pressone_endAcctStatus,s,begin;
+}
+
+_0 => { goto pressone_agent-xfer,s,begin; }
+_1 => { 
+        Playback(/home/pressone/www/voicefiles/pressone~12_hold_access_account);
+        AGI("agi://127.0.0.1:4577",${mynumber});
+        NoOp(ACCT: ${ACCT_NUMBER});
+        if (${ACCT_NUMBER} > 0) {
+                goto s,pg2;
+        } else {
+                Playback(/home/pressone/www/voicefiles/pressone~unableToProcess);
+                goto pressone_agent-xfer,s,begin;
+        }
+ }
+_2 => { 
+        goto pressone_payments,s,begin;
+ }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => { goto pressone_main-menu,s,begin; } 
+
+_* => { goto s,begin; } 
+_# => {  } 
+ i => { goto pressone_account-status,s,begin; } 
+ t => { goto pressone_account-status,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_account-status.ael"
+}
+
+macro SayYearMonthDay(date) {
+        if (${date:4:1} == 0) {
+                Playback(/home/pressone/www/voicefiles/pressone~month"${date:5:1}");
+        } else {
+                Playback(/home/pressone/www/voicefiles/pressone~month1"${date:5:1}");
+        }
+        Playback(/home/pressone/www/voicefiles/pressone~date"${date:6:2}");
+        SayNumber(20);
+        SayNumber(${date:2:2});
+}
+
+context sub1-account-status {
+s => {
+begin:
+
+NoOp(you are in sub1-account-status);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-account-status,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-account-status {
+s => {
+        begin:
+
+        NoOp(you are in sub2-account-status);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-account-status,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

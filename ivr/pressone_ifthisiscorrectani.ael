@@ -1,0 +1,116 @@
+context pressone_ifthisiscorrectani {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+begin:
+                NoOp(you are in ifthisiscorrectani);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                Set(ACCT_NUMBER=0);       
+                Background(/home/pressone/www/voicefiles/pressone~11_if_this_is_correct);
+                WaitExten();    
+        }
+
+_0 => {  }
+_1 => { 
+        Playback(/home/pressone/www/voicefiles/pressone~12_hold_access_account);
+        AGI("agi://127.0.0.1:4577",${mynumber});
+        NoOp(ACCT: ${ACCT_NUMBER});
+        NoOP(STATUS: ${STATUS});
+        NoOP(EXP_DATE = ${EXP_DATE});
+        NoOP(LAST_BILL_DATE = ${LAST_BILL_DATE});
+        NoOP(LAST_PAY_AMT = ${LAST_PAY_AMT});
+        NoOP(HOUSE_NUM = ${HOUSE_NUM});
+        set(ACCT_NUMBER=1);
+        if(${ACCT_NUMBER} > 0)  { 
+                Playback(/home/pressone/www/voicefiles/pressone~IfYourHouseNumIs);
+                Saydigits(${HOUSE_NUM});                
+                NoOP(account number = ${ACCT_NUMBER} , HOUSE_NUM = ${HOUSE_NUM} , status = ${STATUS});  
+                Read(choice,"/home/pressone/www/voicefiles/pressone~14_press1_otherwise_press2");
+        } else { goto pressone_14errormessage,s,begin; } 
+         
+        if(${choice} == 1) {  
+                NoOP(Chose 1);
+                if (${Status} == "Complaints") goto pressone_complaints,s,begin;
+                if (${Status} == "Temp Stop") goto pressone_vacation-stops,s,begin;
+                if (${Status} == "Perm Stop") goto pressone_agent-xfer,s,begin;
+                goto pressone_account-status,s,begin;
+        } else if(${choice} == 2) {  
+                NoOP(Chose 2); 
+                goto pressone_agent-xfer,s,begin; 
+        }
+        goto pressone_agent-xfer,s,begin;
+ }
+
+
+_2 => { goto pressone_dtmf,s,begin; }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_ifthisiscorrectani,s,begin; } 
+ t => { goto pressone_account-lookup,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_ifthisiscorrectani.ael"
+}
+
+ 
+
+context sub1-pressone-ifthisiscorrectani {
+s => {
+begin:
+
+NoOp(you are in sub1-pressone-ifthisiscorrectani);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-pressone-ifthisiscorrectani,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-pressone-ifthisiscorrectani {
+s => {
+begin:
+
+NoOp(you are in sub2-pressone-ifthisiscorrectani);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-pressone-ifthisiscorrectani,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

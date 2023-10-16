@@ -1,0 +1,103 @@
+context pressone_Redelivery {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+begin:
+                NoOp(you are in Redelivery);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                ifTime (07:00-11:00|sun|*|*) {
+                        Background(/home/pressone/www/voicefiles/pressone~21_credit_missed_paper);
+                } else {
+                        Background(/home/pressone/www/voicefiles/pressone~21_credit_missed_paperTomorrow);
+                }
+                
+                WaitExten();
+        }
+
+_0 => {  }
+_1 => { SET(ResolutionCode="R"); goto sub1-Redelivery,s,begin; }
+_2 => { SET(ResolutionCode="C"); goto sub1-Redelivery,s,begin; }
+_3 => {  }
+_4 => {  }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_Redelivery,s,begin; } 
+ t => { goto sub1-Redelivery,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_Redelivery.ael"
+}
+
+ 
+
+context sub1-Redelivery {
+s => {
+begin:
+
+        NoOp(you are in sub1-Redelivery);
+        TIMEOUT(response)=10;        
+        Playback(/home/pressone/www/voicefiles/pressone~22_hold_while_process);
+        Set(year=${STRFTIME(${EPOCH}, ,%Y)});
+        AGI("agi://127.0.0.1/ivrServerrTran.php", ${STATE_INFO}, ${ACCT_NUMBER}, ${Complaintcode}, ${ResolutionCode}, ${year}${IncidentDate});
+        NoOP(RETURN_STATUS: ${RETURN_STATUS});
+        if (${RETURN_STATUS} == "Completed") {
+                if (${ResolutionCode} == "C") {
+                        Playback(/home/pressone/www/voicefiles/pressone~54_perform_another_transactionCredit);
+                } else {
+                        Playback(/home/pressone/www/voicefiles/pressone~54_perform_another_action);
+                }
+        } else {
+                goto pressone_agent-xfer,s,begin;
+        }
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+_9 => { goto pressone_main-menu,s,begin; }
+ i => { goto sub1-Redelivery,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-Redelivery {
+s => {
+        begin:
+
+        NoOp(you are in sub2-Redelivery);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-Redelivery,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+

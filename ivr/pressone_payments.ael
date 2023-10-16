@@ -1,0 +1,120 @@
+context pressone_payments {
+
+includes{
+          out-pressone-ivr;
+        }
+
+s => {          
+        begin:
+                NoOp(you are in payments);
+                answer();
+                TIMEOUT(response)=10;
+                TIMEOUT(digit)=2;
+                Background(/cid/blank);
+                // Background(/home/pressone/www/voicefiles/pressone~payments);
+                SET(ACCT_NUMBER=1);
+                AGI("agi://127.0.0.1:4577",${mynumber});
+                NoOp(ACCT: ${ACCT_NUMBER});
+                if (${ACCT_NUMBER} > 0) {
+                        for (x=1; ${x} < 5; x=${x} + 1) {
+                                Playback(/home/pressone/www/voicefiles/pressone~toRenewFor);
+                                if (${RENEWAL_LENGTH_TYPE} == "Weeks") {
+                                        Playback(/home/pressone/www/voicefiles/pressone~Weeks);
+                                } else {
+                                        Playback(/home/pressone/www/voicefiles/pressone~Months);
+                                }
+                                SayDigits(${x});
+                                Playback(/home/pressone/www/voicefiles/pressone~paymentPress${x});
+                                WaitExten();
+                        }
+                        goto pressone_dtmf,s,enterCCnum;                        
+                } else {
+                        goto pressone_agent-xfer,s,begin;
+                }
+                WaitExten();
+        pg2:
+                Playback(/home/pressone/www/voicefiles/pressone~transactionHold);
+                // Retrieve Renewals by CC/BD from Webspeed
+                // Tokenize CC
+                // Submit Transaction to Webspeed
+                // AGI(agi://127.0.0.1:4577/cgi-bin/cmo_csg-c-cmdbtst-01.sh/custservice/IVR/payform2.html?CCnum=${CCNum}&PhoneNumber=${PHONE}&ExpDate=${expDate}&ZipCode=${billingZipCode},${ACCT_NUMBER})
+                if (${ACCT_NUMBER} > 0) {
+                        Playback(/home/pressone/www/voicefiles/pressone~yourPaymentFor);
+                        Saydigits(${TOTOA_RENEWAL_AMOUNT});
+                        Playback(/home/pressone/www/voicefiles/pressone~hasBeenApplied);
+                        SayDigits(${NEW_RENEWAL_DATE});
+                        goto pressone_anotherTransactionPayments,s,begin;
+                } else {
+                        Playback(/home/pressone/www/voicefiles/pressone~unableToProcess);
+                        goto pressone_agent-xfer,s,begin;
+                }
+}
+
+_0 => {  }
+_1 => { goto pressone_dtmf,s,enterCCnum; }
+_2 => { goto pressone_dtmf,s,enterCCnum; }
+_3 => { goto pressone_dtmf,s,enterCCnum; }
+_4 => { goto pressone_dtmf,s,enterCCnum; }
+_5 => {  }
+_6 => {  }
+_7 => {  }
+_8 => {  } 
+_9 => {  } 
+
+_* => {  } 
+_# => {  } 
+ i => { goto pressone_payments,s,begin; } 
+ t => { goto pressone_payments,s,begin; }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+
+#include "/etc/asterisk/AEL/customivr_pressone_payments.ael"
+}
+
+ 
+
+context sub1-payments {
+s => {
+begin:
+
+NoOp(you are in sub1-payments);
+TIMEOUT(response)=10;
+Background(/home/pressone/www/voicefiles/${greeting});
+WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub1-payments,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
+
+
+context sub2-payments {
+s => {
+        begin:
+
+        NoOp(you are in sub2-payments);
+        TIMEOUT(response)=10;
+        Background(/home/pressone/www/voicefiles/${greeting});
+        WaitExten();
+}
+
+_1 => {  }
+_2 => {  }
+_3 => {  }
+_4 => {  }
+ i => { goto sub2-payments,s,begin;  }
+ t => {  }
+ h => { Set(st=in); if("${DIALSTATUS}" == "NOANSWER")  { Set(st=inmissed); } System(php ${dr}/calllogin1.php "${CALLERID(num)}" "${st}" "${CDR(duration)}" "${table}" "${ext}" "Call" "${CALLERID(name)}" "no" "no" "" "" "" "" "" "" "${UNIQUEID}" "${CHANNEL}" "${CHANNEL(rtcp,all)}");
+if (${EXISTS(${vmexta})}) {System(php /cid/livevm.php "${database}" "${vmexta}" "${CALLERID(num)}" "${CALLERID(name)}" "vm_${UNIQUEID}.wav" "${dr}" "${tbl}" "${UNIQUEID}" );}
+ }
+  }
+
